@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+
 use App\Models\Wallet;
 use App\Models\Transactions;
 use App\Models\Deposite;
+use App\Jobs\TransactionHandler;
+use App\Models\Podcast;
 use DB;
 
-class DepositeController extends Controller
+class DepositeController extends Controller 
 {
+    
     /**
      * Display a listing of the resource.
      *
@@ -50,7 +54,7 @@ class DepositeController extends Controller
      */
     public function show($id)
     {
-        $trans =DB::table('deposite')->where('wallet_id', $id)->get();
+        $trans =DB::table('deposites')->where('wallet_id', $id)->get();
         //  var_dump($trans);
         // die();
 
@@ -65,7 +69,7 @@ class DepositeController extends Controller
      */
 
     public function depoTrans($id, $data){
-       
+       DB::transaction(function () use( $id, $data) {
         $depoiste= new Deposite();
         $trans= new Transactions();
 
@@ -83,12 +87,15 @@ class DepositeController extends Controller
         // var_dump($wallet);
         // die();
         $wallet->save();
-        sleep(60);
+        sleep(1);
         $i++;
         }
-        $depoiste->active= 'deposite_closed';
+        $depoiste->active= 'closed';
         $depoiste->save();
         
+           DB::commit();
+       });
+       
 
     }
     
@@ -107,10 +114,14 @@ class DepositeController extends Controller
         $depoiste->percent= 20;
         $depoiste->active= 'open';
         $depoiste->duration = 10;
-        $depoiste->accrue_time = 60;
+        $depoiste->accrue_time = 10;
         $depoiste->save();
-        $amount = $data['amount'];
-        $this->depoTrans($id, $amount);
+        //$amount = $data['amount'];
+        //$this->depoTrans($id, $amount);
+        
+
+        
+        //TransactionHandler::dispatch();
         
         return redirect('home');
     }
